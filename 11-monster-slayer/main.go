@@ -3,10 +3,12 @@ package main
 import (
 	"fmt"
 
+	"github.com/matheusjerico/monsterslayer/actions"
 	"github.com/matheusjerico/monsterslayer/interaction"
 )
 
 var currentRound = 0
+var gameRounds = []interaction.RoundData{}
 
 func main() {
 	startGame()
@@ -17,7 +19,7 @@ func main() {
 		winner = executeRound()
 	}
 
-	endGame()
+	endGame(winner)
 }
 
 func startGame() {
@@ -33,9 +35,44 @@ func executeRound() string {
 
 	fmt.Printf("User choice: %v\n", userChoice)
 
+	var playerAttackDmg int
+	var playerHealValue int
+	var monsterAttackValue int
+
+	if userChoice == "ATTACK" {
+		playerAttackDmg = actions.AttackMonster(false)
+	} else if userChoice == "HEAL" {
+		playerHealValue = actions.HealPlayer()
+	} else {
+		playerAttackDmg = actions.AttackMonster(true)
+	}
+
+	monsterAttackValue = actions.AttackPlayer()
+
+	playerHealth, monsterHealth := actions.GetHealthAmounts()
+
+	roundData := interaction.NewRoundData(
+		userChoice,
+		currentRound,
+		playerAttackDmg,
+		playerHealValue,
+		monsterAttackValue,
+		playerHealth,
+		monsterHealth,
+	)
+	roundData.PrintRoundStatistics()
+	gameRounds = append(gameRounds, *roundData)
+
+	if playerHealth <= 0 {
+		return "Monster"
+	} else if monsterHealth <= 0 {
+		return "Player"
+	}
+
 	return ""
 }
 
-func endGame() {
-
+func endGame(winner string) {
+	interaction.DeclarateWinner(winner)
+	interaction.WriteLogFile(&gameRounds)
 }
